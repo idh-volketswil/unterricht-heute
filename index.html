@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Unterricht heute</title>
+<meta name="description" content="Spettungen und Unterrichtsausfall im Schulhaus In der Höh, Volketswil">
+<meta name="theme-color" content="#20374C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Unterricht">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap">
+<style>
+/* Eine schmale Spalte wie ein Tageszettel: Status oben, Lektionen als Zeitleiste darunter */
+:root{
+  --bg:#EEF2F5; --surface:#FFFFFF; --fg:#14202B; --muted:#5A6876; --line:#D7DEE5; --ink:#20374C; --ink-fg:#FFFFFF;
+  --ok:#1C7F46; --ok-bg:#DDF2E5; --spett:#2159C2; --spett-bg:#E2EBFB; --vertr:#0B7680; --vertr-bg:#DBF0F1; --aus:#C2570B; --aus-bg:#FBE7D6; --now:#20374C;
+  --demo:#8A5A00; --demo-bg:#FFF3D6;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0E141A; --surface:#17202A; --fg:#E6ECF2; --muted:#98A6B4; --line:#2A3743; --ink:#C9DBEC; --ink-fg:#0E141A;
+  --ok:#55C886; --ok-bg:#12301F; --spett:#82AEF5; --spett-bg:#162A48; --vertr:#5CC9D1; --vertr-bg:#0F2F31; --aus:#F39A50; --aus-bg:#3A2312; --now:#C9DBEC;
+  --demo:#F2C46B; --demo-bg:#33280F; color-scheme:dark}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:17px;line-height:1.45;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+[hidden]{display:none!important}
+#app{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 48px;display:flex;flex-direction:column;gap:16px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--spett);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.muted{color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{width:76px;height:auto;flex:none;color:var(--fg)}
+.brand h1{font-size:1.5rem;font-weight:800}
+.brand p{margin:0;font-size:.85rem;color:var(--muted)}
+.reload{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;width:44px;height:44px;display:grid;place-items:center}
+.reload svg{width:20px;height:20px}
+.reload.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.banner{border-radius:14px;padding:10px 14px;font-size:.9rem;background:var(--demo-bg);color:var(--demo);font-weight:700}
+
+.klasse{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.klasse-chip{font-family:var(--f-display);font-weight:800;font-size:1.25rem}
+.link{border:0;background:none;color:var(--spett);font-weight:700;padding:6px 0;text-decoration:underline;text-underline-offset:3px}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tabs button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px 12px;text-align:left;display:flex;flex-direction:column}
+.tabs button b{font-size:1rem}
+.tabs button span{font-size:.82rem;color:var(--muted)}
+.tabs button[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+
+.status{border-radius:20px;padding:20px 20px 18px;display:flex;gap:16px;align-items:flex-start}
+.status .dot{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--surface);font-weight:800;font-size:1.3rem}
+.status h2{font-size:1.6rem;font-weight:800;line-height:1.15}
+.status p{margin:4px 0 0}
+.status.ok{background:var(--ok-bg)} .status.ok .dot{background:var(--ok)} .status.ok h2{color:var(--ok)}
+.status.spett{background:var(--spett-bg)} .status.spett .dot{background:var(--spett)} .status.spett h2{color:var(--spett)}
+.status.vertr{background:var(--vertr-bg)} .status.vertr .dot{background:var(--vertr)} .status.vertr h2{color:var(--vertr)}
+.status.aus{background:var(--aus-bg)} .status.aus .dot{background:var(--aus)} .status.aus h2{color:var(--aus)}
+.status.frei,.status.wait{background:var(--surface);border:1px solid var(--line)} .status.frei .dot,.status.wait .dot{background:var(--muted)}
+
+.notice{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;gap:10px;overflow-wrap:anywhere}
+.notice::before{content:"i";flex:none;width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--ink-fg);font-weight:800;font-size:.8rem;display:grid;place-items:center;margin-top:2px}
+
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.row{display:grid;grid-template-columns:7.2em 1fr auto;gap:10px;align-items:center;padding:11px 14px;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.92rem}
+.row .l{font-weight:700;min-width:0}
+.row .note{display:block;font-weight:400;font-size:.9rem;margin-top:2px;overflow-wrap:anywhere}
+.row.pause{padding:5px 14px;background:var(--bg);grid-template-columns:7.2em 1fr}
+.row.pause .t,.row.pause .l{font-size:.8rem;font-weight:400;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.row.spett{background:var(--spett-bg);box-shadow:inset 4px 0 0 var(--spett)}
+.row.aus{background:var(--aus-bg);box-shadow:inset 4px 0 0 var(--aus)}
+.row.vertr{background:var(--vertr-bg);box-shadow:inset 4px 0 0 var(--vertr)}
+.row.aus .l>span:first-child{text-decoration:line-through;text-decoration-thickness:2px}
+.row.jetzt .t{color:var(--now);font-weight:700}
+.tag{font-size:.78rem;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.tag.spett{background:var(--spett);color:var(--surface)}
+.tag.aus{background:var(--aus);color:var(--surface)}
+.tag.vertr{background:var(--vertr);color:var(--surface)}
+.tag.now{border:1.5px solid var(--now);color:var(--now)}
+
+.foot{display:flex;flex-direction:column;gap:10px;font-size:.9rem}
+.foot p{margin:0}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+summary{cursor:pointer;font-weight:700;padding:10px 0}
+details ol{margin:0 0 12px;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+details h3{font-size:.95rem;margin:6px 0 4px}
+
+.picker h2{font-size:1.5rem}
+.picker p{margin:6px 0 14px}
+.stufen{display:flex;flex-direction:column;gap:10px}
+.grid-k{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.grid-k button{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:16px 8px;font-family:var(--f-display);font-weight:800;font-size:1.02rem;white-space:nowrap;min-width:0}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card h2{font-size:1.25rem}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:7px 14px;border-radius:999px;font-size:.9rem;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--ink-fg)}
+.tablewrap{overflow-x:auto}
+table.schule{border-collapse:separate;border-spacing:3px;width:100%;font-size:.85rem}
+table.schule th{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;padding:2px}
+table.schule th.k{text-align:left;white-space:nowrap;color:var(--fg);padding-right:6px}
+table.schule td{height:30px;min-width:26px;border-radius:7px;background:var(--bg);text-align:center;font-weight:800;font-size:.75rem}
+table.schule td.spett{background:var(--spett);color:var(--surface)}
+table.schule td.aus{background:var(--aus);color:var(--surface)}
+table.schule td.vertr{background:var(--vertr);color:var(--surface)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;vertical-align:-1px;margin-right:5px}
+.legend .s{background:var(--spett)} .legend .v{background:var(--vertr)} .legend .a{background:var(--aus)}
+@media (prefers-reduced-motion:reduce){.reload.spin svg{animation:none}}
+</style>
+</head>
+<body>
+<div id="app"><p class="muted">Unterricht heute wird geladen …</p></div>
+<script>
+(function(){
+"use strict";
+
+/* ===== EINSTELLUNGEN =====
+   Hier den CSV-Link aus Google einfügen (Datei > Teilen > Im Web veröffentlichen > Blatt «App» > CSV).
+   Solange der Link leer ist, zeigt die App Beispieldaten. */
+var CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS3_lw4uSz4Gz2m3pfZjdTrCVqGxxSbSpRwFzDTOQyTdr8MgV3ZXGD9jwpr416Te0cifJYeMnUI-sCb/pub?gid=964717877&single=true&output=csv";
+
+var SCHULE = "Schulhaus In der Höh";
+var KLASSEN = ["1. Sek A","1. Sek B","1. Sek C","2. Sek Kof","2. Sek Aub","3. Sek Ste","3. Sek Stä","3. Sek Pre"];
+var PLAN = [
+  {n:1,von:"07:30",bis:"08:15"},{n:2,von:"08:20",bis:"09:05"},{n:3,von:"09:05",bis:"09:50"},
+  {p:"Pause",von:"09:50",bis:"10:20"},
+  {n:4,von:"10:20",bis:"11:05"},{n:5,von:"11:05",bis:"11:50"},
+  {p:"Mittagspause",von:"11:50",bis:"13:30"},
+  {n:6,von:"13:30",bis:"14:15"},{n:7,von:"14:15",bis:"15:00"},
+  {p:"Pause",von:"15:00",bis:"15:15"},
+  {n:8,von:"15:15",bis:"16:00"},{n:9,von:"16:00",bis:"16:45"}];
+/* ===== ENDE EINSTELLUNGEN ===== */
+
+var LOGO = '<svg class="logo" fill="currentColor" role="img" aria-label="Logo Gesamtschule In der Höh" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 612.883 427.158"><path d="M32.6 402.6 C35.7 402.6 37.4 404.4 37.4 408.2 C37.4 418.9 30.4 427.2 19.4 427.2 C7 427.2 0 417.8 0 406.3 C0 394.2 8.3 385.5 19.4 385.5 C26.9 385.5 34.7 388.6 34.7 394.2 C34.7 396.5 33.2 398 30.7 398 C27.4 398 25.9 393.9 19.8 393.9 C13.5 393.9 9.7 399.4 9.7 406.3 C9.7 412.5 12.7 418.8 19.6 418.8 C24.4 418.8 27.6 415.7 28.1 411 L22.9 411 C20.1 411 18.4 409.4 18.4 406.8 C18.4 404.2 20.1 402.6 22.9 402.6 L32.6 402.6"/><path d="M63.7 408.2 C63.7 406.3 61.5 403 58.1 403 C54.8 403 52.5 406.3 52.5 408.2 L63.7 408.2 Z M52.5 414.2 C52.5 416.1 53.9 419.1 59.5 419.1 C63.7 419.1 66.4 416.4 68.4 416.4 C70.3 416.4 72 417.9 72 420.1 C72 424.4 64.9 427.2 58.4 427.2 C49 427.2 43.2 420.2 43.2 411.4 C43.2 403 49.5 395.6 58.4 395.6 C66.9 395.6 72.4 402.8 72.4 410.4 C72.4 413.5 71 414.2 68.2 414.2 L52.5 414.2"/><path d="M84.3 416.9 C87 416.9 88.9 419.4 92.6 419.4 C94.4 419.4 95 418.6 95 417.7 C95 415.9 93.1 415.7 88.3 413.7 C83.9 411.9 81.5 410.2 81.5 405.5 C81.5 400.5 85.7 395.6 92.6 395.6 C96.1 395.6 102.6 397.3 102.6 401.8 C102.6 404 101.1 405.5 99 405.5 C97.3 405.5 94.8 403.3 92.1 403.3 C90.9 403.3 89.8 403.9 89.8 405.1 C89.8 408.6 103.4 407.8 103.4 417.4 C103.4 423.5 98.2 427.2 92.3 427.2 C86.8 427.2 80.7 425 80.7 421.1 C80.7 418.6 82.3 416.9 84.3 416.9"/><path d="M116.8 411.4 C116.8 415.4 118.9 418.8 122.8 418.8 C126.6 418.8 128.7 415.4 128.7 411.4 C128.7 407.3 126.6 404 122.8 404 C118.9 404 116.8 407.3 116.8 411.4 Z M137.4 422.1 C137.4 424.6 135.6 426.6 133 426.6 C130.9 426.6 129.6 425.1 129 423.8 C127 426.2 124.8 427.2 121.5 427.2 C114 427.2 108.2 420.2 108.2 411.4 C108.2 402.6 114 395.6 121.5 395.6 C124.8 395.6 127 396.5 129 398.9 C129.6 397.6 130.9 396.1 133 396.1 C135.6 396.1 137.4 398.1 137.4 400.7 L137.4 422.1"/><path d="M148.2 400.7 C148.2 398.1 149.9 396.1 152.5 396.1 C154.8 396.1 156.3 397.6 156.8 398.9 C158.2 396.8 161.1 395.6 164.3 395.6 C166.8 395.6 170.2 396.5 172.3 399.2 C174.4 397.6 177 395.6 180.7 395.6 C186.7 395.6 191.4 398.7 191.4 405.9 L191.4 422.1 C191.4 424.6 189.7 426.6 187.1 426.6 C184.6 426.6 182.8 424.6 182.8 422.1 L182.8 408.2 C182.8 405.5 181.3 403 178.5 403 C175.6 403 174.1 405.5 174.1 408.2 L174.1 422.1 C174.1 424.6 172.4 426.6 169.8 426.6 C167.3 426.6 165.5 424.6 165.5 422.1 L165.5 408.2 C165.5 405.5 164 403 161.1 403 C158.3 403 156.8 405.5 156.8 408.2 L156.8 422.1 C156.8 424.6 155 426.6 152.5 426.6 C149.9 426.6 148.2 424.6 148.2 422.1 L148.2 400.7"/><path d="M201.2 404.5 L200.2 404.5 C197.4 404.5 195.6 403.3 195.6 400.5 C195.6 397.7 197.4 396.5 200.2 396.5 L201.2 396.5 L201.2 390.8 C201.2 388.2 202.9 386.2 205.5 386.2 C208 386.2 209.8 388.2 209.8 390.8 L209.8 396.5 L212.2 396.5 C215 396.5 216.7 397.7 216.7 400.5 C216.7 403.3 215 404.5 212.2 404.5 L209.8 404.5 L209.8 422.1 C209.8 424.6 208 426.6 205.5 426.6 C202.9 426.6 201.2 424.6 201.2 422.1 L201.2 404.5"/><path d="M223 416.9 C225.7 416.9 227.6 419.4 231.3 419.4 C233.1 419.4 233.7 418.6 233.7 417.7 C233.7 415.9 231.8 415.7 227 413.7 C222.6 411.9 220.2 410.2 220.2 405.5 C220.2 400.5 224.4 395.6 231.3 395.6 C234.8 395.6 241.3 397.3 241.3 401.8 C241.3 404 239.8 405.5 237.7 405.5 C236 405.5 233.4 403.3 230.8 403.3 C229.6 403.3 228.5 403.9 228.5 405.1 C228.5 408.6 242 407.8 242 417.4 C242 423.5 236.9 427.2 230.9 427.2 C225.5 427.2 219.4 425 219.4 421.1 C219.4 418.6 221 416.9 223 416.9"/><path d="M262.5 395.6 C266.4 395.6 272.7 396.7 272.7 401.3 C272.7 403.7 271.2 405.4 269.2 405.4 C267 405.4 266.4 404 263 404 C258.6 404 256.5 407.3 256.5 411.4 C256.5 415.4 258.6 418.8 262.5 418.8 C266.2 418.8 267.9 417.2 269.2 417.2 C271.2 417.2 272.7 419.3 272.7 421.1 C272.7 425.5 265.9 427.2 262.5 427.2 C253.7 427.2 247.9 420.2 247.9 411.4 C247.9 402.6 253.7 395.6 262.5 395.6"/><path d="M278.2 387.7 C278.2 385.2 280 383.1 282.6 383.1 C285.1 383.1 286.9 385.2 286.9 387.7 L286.9 397.8 L287 397.8 C288.8 396.6 291 395.6 294.3 395.6 C300.3 395.6 305.1 398.7 305.1 405.9 L305.1 422.1 C305.1 424.6 303.3 426.6 300.8 426.6 C298.2 426.6 296.4 424.6 296.4 422.1 L296.4 408.2 C296.4 405.2 294.6 403 291.7 403 C288.7 403 286.9 405.2 286.9 408.2 L286.9 422.1 C286.9 424.6 285.1 426.6 282.6 426.6 C280 426.6 278.2 424.6 278.2 422.1 L278.2 387.7"/><path d="M339.4 415.5 C339.4 423.6 333.2 427.2 326 427.2 C318.8 427.2 312.6 423.6 312.6 415.5 L312.6 400.7 C312.6 398.1 314.3 396.1 316.9 396.1 C319.4 396.1 321.2 398.1 321.2 400.7 L321.2 414.3 C321.2 417.6 323.7 419.1 326 419.1 C328.3 419.1 330.8 417.6 330.8 414.3 L330.8 400.7 C330.8 398.1 332.5 396.1 335.1 396.1 C337.6 396.1 339.4 398.1 339.4 400.7 L339.4 415.5"/><path d="M346.7 387.7 C346.7 385.2 348.5 383.1 351.1 383.1 C353.6 383.1 355.4 385.2 355.4 387.7 L355.4 422.1 C355.4 424.6 353.6 426.6 351.1 426.6 C348.5 426.6 346.7 424.6 346.7 422.1 L346.7 387.7"/><path d="M382.1 408.2 C382.1 406.3 379.8 403 376.5 403 C373.1 403 370.9 406.3 370.9 408.2 L382.1 408.2 Z M370.9 414.2 C370.9 416.1 372.2 419.1 377.8 419.1 C382.1 419.1 384.7 416.4 386.7 416.4 C388.6 416.4 390.3 417.9 390.3 420.1 C390.3 424.4 383.2 427.2 376.7 427.2 C367.4 427.2 361.5 420.2 361.5 411.4 C361.5 403 367.8 395.6 376.7 395.6 C385.2 395.6 390.7 402.8 390.7 410.4 C390.7 413.5 389.3 414.2 386.5 414.2 L370.9 414.2"/><path fill-rule="evenodd" d="M385.3 348.7 C383.6 348.7 382 348.1 380.8 346.9 C379.6 345.7 378.9 344 378.9 342.3 C378.9 340.6 379.6 339 380.8 337.8 C382 336.6 383.6 335.9 385.3 335.9 C387 335.9 388.6 336.6 389.8 337.8 C391 339 391.7 340.6 391.7 342.3 C391.7 344 391 345.7 389.8 346.9 C388.6 348.1 387 348.7 385.3 348.7"/><path fill-rule="evenodd" d="M411.9 346.3 C410.2 346.6 408.5 346.2 407.1 345.2 C405.7 344.2 404.8 342.7 404.5 341 C404.2 339.4 404.6 337.6 405.6 336.3 C406.6 334.9 408.1 333.9 409.8 333.7 C411.5 333.4 413.2 333.8 414.6 334.8 C415.9 335.8 416.9 337.3 417.1 338.9 C417.4 340.6 417 342.3 416 343.7 C415.1 345.1 413.6 346 411.9 346.3"/><path fill-rule="evenodd" d="M437.7 339.5 C436.1 340.1 434.3 339.9 432.8 339.2 C431.3 338.5 430.1 337.1 429.6 335.5 C429 333.9 429.1 332.2 429.9 330.6 C430.6 329.1 431.9 327.9 433.6 327.4 C435.2 326.8 436.9 327 438.4 327.7 C440 328.4 441.1 329.8 441.7 331.4 C442.2 333 442.1 334.7 441.4 336.3 C440.6 337.8 439.3 339 437.7 339.5"/><path fill-rule="evenodd" d="M462.1 328.6 C460.6 329.4 458.8 329.5 457.2 329.1 C455.6 328.6 454.2 327.5 453.4 326 C452.6 324.5 452.4 322.7 452.9 321.1 C453.4 319.5 454.5 318.1 456 317.3 C457.5 316.5 459.2 316.3 460.8 316.8 C462.5 317.3 463.8 318.4 464.6 319.9 C465.4 321.4 465.6 323.1 465.1 324.8 C464.7 326.4 463.6 327.8 462.1 328.6"/><path fill-rule="evenodd" d="M484.3 313.8 C482.9 314.8 481.2 315.3 479.6 315.1 C477.9 314.8 476.3 314 475.3 312.6 C474.3 311.3 473.8 309.6 474 307.9 C474.2 306.2 475.1 304.7 476.4 303.7 C477.8 302.6 479.5 302.1 481.1 302.4 C482.8 302.6 484.4 303.4 485.4 304.8 C486.4 306.1 486.9 307.8 486.7 309.5 C486.5 311.2 485.6 312.7 484.3 313.8"/><path fill-rule="evenodd" d="M503.8 295.5 C502.6 296.7 501 297.5 499.3 297.6 C497.6 297.6 496 297 494.7 295.9 C493.5 294.7 492.7 293.1 492.7 291.4 C492.6 289.7 493.2 288.1 494.3 286.8 C495.5 285.6 497.1 284.8 498.8 284.8 C500.5 284.7 502.1 285.3 503.4 286.4 C504.6 287.6 505.4 289.2 505.4 290.9 C505.5 292.6 504.9 294.2 503.8 295.5"/><path fill-rule="evenodd" d="M520 274.3 C519 275.7 517.6 276.7 515.9 277 C514.3 277.4 512.5 277.1 511.1 276.1 C509.7 275.2 508.7 273.8 508.3 272.1 C508 270.4 508.3 268.7 509.2 267.3 C510.2 265.9 511.6 264.9 513.3 264.5 C515 264.2 516.7 264.5 518.1 265.4 C519.5 266.3 520.5 267.8 520.9 269.5 C521.2 271.1 520.9 272.9 520 274.3"/><path fill-rule="evenodd" d="M532.5 250.7 C531.8 252.2 530.5 253.5 528.9 254.1 C527.3 254.7 525.6 254.7 524 254 C522.5 253.3 521.2 252 520.6 250.4 C520 248.9 520.1 247.1 520.7 245.5 C521.4 244 522.7 242.8 524.3 242.1 C525.9 241.5 527.6 241.6 529.2 242.3 C530.7 242.9 531.9 244.2 532.6 245.8 C533.2 247.4 533.1 249.1 532.5 250.7"/><path fill-rule="evenodd" d="M540.9 225.4 C540.5 227 539.4 228.4 538 229.3 C536.5 230.2 534.8 230.4 533.1 230 C531.5 229.6 530.1 228.5 529.2 227.1 C528.3 225.6 528.1 223.9 528.5 222.2 C528.9 220.6 530 219.2 531.4 218.3 C532.9 217.4 534.6 217.2 536.3 217.6 C537.9 218 539.3 219.1 540.2 220.5 C541.1 222 541.3 223.7 540.9 225.4"/><path fill-rule="evenodd" d="M545.1 199 C544.9 200.7 544.1 202.2 542.8 203.3 C541.5 204.4 539.8 205 538.1 204.8 C536.5 204.7 534.9 203.9 533.8 202.6 C532.7 201.3 532.2 199.6 532.3 197.9 C532.4 196.2 533.2 194.7 534.5 193.6 C535.8 192.5 537.5 191.9 539.2 192.1 C540.9 192.2 542.5 193 543.6 194.3 C544.7 195.6 545.2 197.3 545.1 199"/><path fill-rule="evenodd" d="M544.8 172.3 C544.9 174 544.4 175.7 543.3 176.9 C542.2 178.2 540.7 179.1 539 179.2 C537.3 179.3 535.6 178.8 534.3 177.7 C533 176.6 532.2 175 532.1 173.3 C531.9 171.7 532.5 170 533.5 168.7 C534.6 167.4 536.2 166.6 537.9 166.4 C539.6 166.3 541.3 166.8 542.6 167.9 C543.9 169 544.7 170.6 544.8 172.3"/><path fill-rule="evenodd" d="M540.2 146 C540.6 147.6 540.3 149.4 539.5 150.8 C538.6 152.3 537.2 153.4 535.5 153.8 C533.9 154.2 532.2 153.9 530.7 153.1 C529.2 152.2 528.2 150.8 527.8 149.1 C527.4 147.5 527.6 145.7 528.5 144.3 C529.3 142.8 530.8 141.8 532.4 141.4 C534 140.9 535.8 141.2 537.2 142.1 C538.7 142.9 539.8 144.3 540.2 146"/><path fill-rule="evenodd" d="M531.3 120.8 C532 122.4 532 124.1 531.4 125.7 C530.8 127.3 529.5 128.6 528 129.3 C526.4 129.9 524.7 130 523.1 129.4 C521.5 128.7 520.2 127.5 519.6 126 C518.9 124.4 518.8 122.6 519.5 121.1 C520.1 119.5 521.3 118.2 522.8 117.5 C524.4 116.8 526.2 116.8 527.7 117.4 C529.3 118 530.6 119.3 531.3 120.8"/><path fill-rule="evenodd" d="M518.4 97.5 C519.3 98.9 519.6 100.6 519.3 102.3 C518.9 103.9 517.9 105.4 516.5 106.3 C515.1 107.2 513.3 107.6 511.7 107.2 C510 106.9 508.6 105.9 507.6 104.5 C506.7 103 506.4 101.3 506.7 99.6 C507.1 98 508.1 96.5 509.5 95.6 C510.9 94.7 512.7 94.3 514.3 94.7 C516 95 517.4 96 518.4 97.5"/><path fill-rule="evenodd" d="M501.8 76.5 C502.9 77.8 503.5 79.4 503.5 81.1 C503.4 82.8 502.6 84.4 501.4 85.6 C500.1 86.7 498.5 87.3 496.8 87.3 C495.1 87.2 493.5 86.5 492.4 85.2 C491.2 84 490.6 82.3 490.7 80.6 C490.7 78.9 491.5 77.3 492.7 76.2 C494 75 495.6 74.4 497.3 74.5 C499 74.5 500.6 75.3 501.8 76.5"/><path fill-rule="evenodd" d="M482 58.6 C483.3 59.7 484.2 61.2 484.4 62.9 C484.6 64.6 484.1 66.3 483.1 67.6 C482 69 480.5 69.8 478.8 70 C477.1 70.2 475.4 69.8 474.1 68.7 C472.8 67.7 471.9 66.2 471.7 64.5 C471.5 62.8 471.9 61.1 473 59.8 C474 58.4 475.6 57.5 477.2 57.3 C478.9 57.1 480.6 57.6 482 58.6"/><path fill-rule="evenodd" d="M459.5 44.2 C461 45 462.1 46.4 462.6 48 C463.1 49.7 462.9 51.4 462.1 52.9 C461.3 54.4 459.9 55.5 458.3 56 C456.6 56.5 454.9 56.3 453.4 55.5 C451.9 54.7 450.8 53.3 450.3 51.7 C449.8 50.1 450 48.3 450.8 46.8 C451.6 45.3 453 44.2 454.6 43.7 C456.2 43.2 458 43.4 459.5 44.2"/><path fill-rule="evenodd" d="M382.4 25.4 C384.1 25.4 385.7 26.1 386.9 27.3 C388.1 28.5 388.8 30.1 388.8 31.8 C388.8 33.5 388.1 35.2 386.9 36.4 C385.7 37.6 384.1 38.2 382.4 38.2 C380.7 38.2 379 37.6 377.8 36.4 C376.6 35.2 376 33.5 376 31.8 C376 30.1 376.6 28.5 377.8 27.3 C379 26.1 380.7 25.4 382.4 25.4"/><path fill-rule="evenodd" d="M355.8 27.9 C357.5 27.6 359.2 28 360.6 29 C361.9 30 362.9 31.5 363.2 33.2 C363.4 34.8 363 36.5 362.1 37.9 C361.1 39.3 359.6 40.2 357.9 40.5 C356.2 40.8 354.5 40.4 353.1 39.4 C351.7 38.4 350.8 36.9 350.5 35.3 C350.2 33.6 350.6 31.9 351.6 30.5 C352.6 29.1 354.1 28.2 355.8 27.9"/><path fill-rule="evenodd" d="M330 34.7 C331.6 34.1 333.3 34.2 334.9 35 C336.4 35.7 337.5 37 338.1 38.7 C338.6 40.3 338.5 42 337.8 43.5 C337 45.1 335.7 46.2 334.1 46.8 C332.5 47.3 330.8 47.2 329.2 46.5 C327.7 45.7 326.5 44.4 326 42.8 C325.4 41.2 325.5 39.4 326.3 37.9 C327 36.4 328.4 35.2 330 34.7"/><path fill-rule="evenodd" d="M305.6 45.6 C307.1 44.8 308.9 44.6 310.5 45.1 C312.1 45.6 313.5 46.7 314.3 48.2 C315.1 49.7 315.3 51.5 314.8 53.1 C314.3 54.7 313.2 56.1 311.7 56.9 C310.2 57.7 308.5 57.9 306.8 57.4 C305.2 56.9 303.8 55.8 303 54.3 C302.2 52.8 302 51.1 302.5 49.4 C303 47.8 304.1 46.4 305.6 45.6"/><path fill-rule="evenodd" d="M283.4 60.4 C284.7 59.4 286.4 58.9 288.1 59.1 C289.8 59.3 291.3 60.2 292.4 61.5 C293.4 62.9 293.9 64.6 293.7 66.3 C293.5 68 292.6 69.5 291.3 70.5 C289.9 71.6 288.2 72 286.5 71.8 C284.9 71.6 283.3 70.8 282.3 69.4 C281.2 68.1 280.8 66.4 281 64.7 C281.2 63 282.1 61.5 283.4 60.4"/><path fill-rule="evenodd" d="M263.9 78.7 C265.1 77.4 266.7 76.7 268.4 76.6 C270.1 76.6 271.7 77.2 273 78.3 C274.2 79.5 275 81.1 275 82.8 C275.1 84.5 274.5 86.1 273.3 87.4 C272.2 88.6 270.6 89.3 268.9 89.4 C267.2 89.5 265.5 88.9 264.3 87.7 C263 86.6 262.3 85 262.2 83.3 C262.2 81.6 262.8 79.9 263.9 78.7"/><path fill-rule="evenodd" d="M247.7 99.9 C248.6 98.5 250.1 97.5 251.8 97.1 C253.4 96.8 255.1 97.1 256.6 98 C258 99 259 100.4 259.3 102.1 C259.7 103.8 259.4 105.5 258.4 106.9 C257.5 108.3 256 109.3 254.4 109.7 C252.7 110 251 109.7 249.6 108.8 C248.1 107.8 247.2 106.4 246.8 104.7 C246.5 103.1 246.8 101.3 247.7 99.9"/><path fill-rule="evenodd" d="M235.2 123.5 C235.9 121.9 237.2 120.7 238.8 120.1 C240.3 119.5 242.1 119.5 243.7 120.2 C245.2 120.9 246.4 122.2 247 123.7 C247.7 125.3 247.6 127.1 246.9 128.6 C246.3 130.2 245 131.4 243.4 132 C241.8 132.7 240.1 132.6 238.5 131.9 C237 131.2 235.7 130 235.1 128.4 C234.5 126.8 234.5 125.1 235.2 123.5"/><path fill-rule="evenodd" d="M236.4 253.4 C235.7 251.8 235.7 250.1 236.3 248.5 C236.9 246.9 238.1 245.6 239.7 244.9 C241.2 244.3 243 244.2 244.6 244.8 C246.2 245.4 247.4 246.7 248.1 248.2 C248.8 249.8 248.8 251.5 248.2 253.1 C247.6 254.7 246.4 256 244.8 256.7 C243.3 257.3 241.5 257.4 239.9 256.8 C238.3 256.1 237.1 254.9 236.4 253.4"/><path fill-rule="evenodd" d="M249.3 276.7 C248.4 275.3 248.1 273.6 248.4 271.9 C248.8 270.3 249.7 268.8 251.2 267.9 C252.6 266.9 254.3 266.6 256 267 C257.6 267.3 259.1 268.3 260 269.7 C261 271.1 261.3 272.9 260.9 274.5 C260.6 276.2 259.6 277.7 258.2 278.6 C256.7 279.5 255 279.8 253.4 279.5 C251.7 279.1 250.2 278.1 249.3 276.7"/><path fill-rule="evenodd" d="M265.9 297.6 C264.8 296.4 264.1 294.7 264.2 293.1 C264.3 291.4 265 289.8 266.3 288.6 C267.5 287.5 269.2 286.8 270.9 286.9 C272.6 287 274.2 287.7 275.3 289 C276.5 290.2 277.1 291.9 277 293.6 C276.9 295.3 276.2 296.9 274.9 298 C273.7 299.2 272 299.8 270.3 299.7 C268.6 299.6 267.1 298.9 265.9 297.6"/><path fill-rule="evenodd" d="M285.7 315.6 C284.4 314.5 283.5 313 283.3 311.3 C283.1 309.6 283.5 307.9 284.6 306.6 C285.6 305.2 287.2 304.4 288.8 304.1 C290.5 303.9 292.2 304.4 293.6 305.4 C294.9 306.5 295.8 308 296 309.7 C296.2 311.4 295.7 313.1 294.7 314.4 C293.6 315.8 292.1 316.6 290.4 316.9 C288.7 317.1 287 316.6 285.7 315.6"/><path fill-rule="evenodd" d="M308.2 330 C306.7 329.1 305.6 327.8 305.1 326.1 C304.6 324.5 304.8 322.8 305.6 321.3 C306.4 319.8 307.8 318.7 309.4 318.2 C311 317.7 312.8 317.9 314.3 318.7 C315.8 319.5 316.9 320.9 317.4 322.5 C317.9 324.1 317.7 325.9 316.9 327.4 C316.1 328.9 314.7 330 313.1 330.5 C311.4 330.9 309.7 330.8 308.2 330"/><path fill-rule="evenodd" d="M332.7 340.5 C331.1 339.9 329.8 338.7 329.1 337.2 C328.3 335.7 328.2 333.9 328.8 332.3 C329.3 330.7 330.5 329.4 332 328.7 C333.5 327.9 335.3 327.8 336.9 328.3 C338.5 328.9 339.8 330.1 340.6 331.6 C341.3 333.1 341.4 334.9 340.9 336.5 C340.3 338.1 339.1 339.4 337.6 340.1 C336.1 340.9 334.3 341 332.7 340.5"/><path fill-rule="evenodd" d="M358.7 346.8 C357 346.5 355.5 345.6 354.5 344.2 C353.5 342.8 353.1 341.1 353.4 339.4 C353.7 337.7 354.6 336.2 356 335.3 C357.4 334.3 359.1 333.9 360.8 334.1 C362.5 334.4 364 335.4 364.9 336.7 C365.9 338.1 366.3 339.8 366 341.5 C365.8 343.2 364.8 344.7 363.4 345.7 C362.1 346.7 360.3 347.1 358.7 346.8"/><path d="M384.6 249.3 C384.6 247.8 385.8 246.5 387.4 246.5 C389 246.5 390.1 247.8 390.1 249.3 L390.1 262.8 C390.1 264.3 389 265.6 387.4 265.6 C385.8 265.6 384.6 264.3 384.6 262.8 L384.6 249.3 Z M387.4 238.3 C389.1 238.3 390.6 239.8 390.6 241.6 C390.6 243.4 389.1 244.9 387.4 244.9 C385.6 244.9 384.1 243.4 384.1 241.6 C384.1 239.8 385.6 238.3 387.4 238.3"/><path d="M396.9 249.3 C396.9 247.8 398 246.5 399.6 246.5 C401 246.5 401.9 247.4 402.3 248.3 C403.2 246.9 404.6 246.1 407 246.1 C410.7 246.1 413.7 248.1 413.7 252.6 L413.7 262.8 C413.7 264.3 412.6 265.6 411 265.6 C409.4 265.6 408.3 264.3 408.3 262.8 L408.3 254.1 C408.3 252.2 407.2 250.8 405.3 250.8 C403.4 250.8 402.3 252.2 402.3 254.1 L402.3 262.8 C402.3 264.3 401.2 265.6 399.6 265.6 C398 265.6 396.9 264.3 396.9 262.8 L396.9 249.3"/><path d="M439.4 256.1 C439.4 258.6 440.7 260.7 443.1 260.7 C445.5 260.7 446.8 258.6 446.8 256.1 C446.8 253.5 445.5 251.4 443.1 251.4 C440.7 251.4 439.4 253.5 439.4 256.1 Z M452.2 262.8 C452.2 264.3 451.1 265.6 449.5 265.6 C448.2 265.6 447.4 264.7 447 263.9 C445.8 265.4 444.4 266 442.3 266 C437.6 266 433.9 261.6 433.9 256.1 C433.9 250.5 437.6 246.1 442.3 246.1 C444.6 246.1 445.8 246.9 446.8 247.7 L446.8 241.2 C446.8 239.6 447.9 238.3 449.5 238.3 C451.1 238.3 452.2 239.6 452.2 241.2 L452.2 262.8"/><path d="M471.2 254.1 C471.2 252.9 469.8 250.8 467.7 250.8 C465.5 250.8 464.1 252.9 464.1 254.1 L471.2 254.1 Z M464.1 257.8 C464.1 259 465 260.9 468.5 260.9 C471.2 260.9 472.8 259.2 474.1 259.2 C475.3 259.2 476.3 260.1 476.3 261.5 C476.3 264.2 471.9 266 467.8 266 C461.9 266 458.3 261.6 458.3 256.1 C458.3 250.8 462.2 246.1 467.8 246.1 C473.2 246.1 476.6 250.7 476.6 255.5 C476.6 257.4 475.7 257.8 474 257.8 L464.1 257.8"/><path d="M482.8 249.3 C482.8 247.8 483.9 246.5 485.5 246.5 C486.9 246.5 487.8 247.4 488.2 248.3 C489.1 247.2 490.4 246.1 492 246.1 C493.3 246.1 494.7 247.3 494.7 249 C494.7 250.9 493.3 251.3 491.3 251.9 C489 252.6 488.2 253.3 488.2 256.1 L488.2 262.8 C488.2 264.3 487.1 265.6 485.5 265.6 C483.9 265.6 482.8 264.3 482.8 262.8 L482.8 249.3"/><path fill-rule="evenodd" d="M444 34.8 C444 46.6 434.5 56.1 422.9 56.1 C411.3 56.1 401.8 46.6 401.8 34.8 C401.8 23.1 411.3 13.6 422.9 13.6 C434.5 13.6 444 23.1 444 34.8"/><path fill-rule="evenodd" d="M498.5 21.3 C498.5 33 489.1 42.5 477.4 42.5 C465.8 42.5 456.4 33 456.4 21.3 C456.4 9.5 465.8 0 477.4 0 C489.1 0 498.5 9.5 498.5 21.3"/><path d="M207.3 154.4 C207.3 148.8 210.8 145.7 215.5 145.7 C220.3 145.7 223.8 148.8 223.8 154.4 L223.8 178 L258.5 178 L258.5 154.4 C258.5 148.8 262 145.7 266.8 145.7 C271.5 145.7 275.1 148.8 275.1 154.4 L275.1 217.7 C275.1 223.2 271.5 226.3 266.8 226.3 C262 226.3 258.5 223.2 258.5 217.7 L258.5 193.4 L223.8 193.4 L223.8 217.7 C223.8 223.2 220.3 226.3 215.5 226.3 C210.8 226.3 207.3 223.2 207.3 217.7 L207.3 154.4"/><path d="M550.4 111.8 C549.6 106.5 552.3 102.5 556.9 101.8 C561.5 101 565.3 104 566.1 109.3 L569.5 130.9 L569.7 130.9 C572.4 126.3 578.2 123.9 583.1 123.1 C595.5 121.1 605.9 127.6 608 141 L612.7 171.4 C613.6 176.6 610.8 180.7 606.3 181.4 C601.7 182.2 597.9 179.2 597 173.9 L592.7 146.3 C591.5 138.9 586.4 136.1 580.7 137 C574.3 138 571.5 143.3 572.4 149.5 L576.7 177.1 C577.6 182.4 574.9 186.4 570.3 187.2 C565.7 187.9 561.9 184.9 561 179.6 L550.4 111.8"/></svg>';
+var LEKT = PLAN.filter(function(x){return x.n});
+var ART = {spett:"Spettplan",vertr:"Vertretung",aus:"Fällt aus"};
+var KURZ = {spett:"S",vertr:"V",aus:"A"};
+var INFO = {spett:"Nach Spettplan in die zugeteilte Klasse",vertr:"Vertretungslehrperson, Unterricht im gewohnten Zimmer",aus:""};
+var TAGE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+var MONATE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+var S = {tab:0, klasse:store("uh-klasse"), pick:false, loading:true, data:null, offline:false, fetched:null, err:false, schuleTab:0};
+if(KLASSEN.indexOf(S.klasse)<0) S.klasse=null;
+
+function pad(n){return String(n).padStart(2,"0")}
+function iso(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function heute(){var d=new Date();d.setHours(0,0,0,0);return d}
+function isWE(d){return d.getDay()===0||d.getDay()===6}
+function naechster(d){var x=new Date(d);do{x.setDate(x.getDate()+1)}while(isWE(x));return x}
+function lang(d){return TAGE[d.getDay()]+", "+d.getDate()+". "+MONATE[d.getMonth()]}
+function kurz(d){return d.getDate()+"."+(d.getMonth()+1)+"."}
+function tage(){var t=heute(),n=naechster(t),m=new Date(t);m.setDate(t.getDate()+1);
+  return [{d:t,label:"Heute"},{d:n,label:iso(n)===iso(m)?"Morgen":TAGE[n.getDay()]}]}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+function min(t){var p=t.split(":");return +p[0]*60 + +p[1]}
+function stufen(){var g=[],m={};KLASSEN.forEach(function(k){var s=k.slice(0,6);if(!m[s]){m[s]=[];g.push(m[s])}m[s].push(k)});return g}
+
+/* ---------- CSV lesen ---------- */
+function parseCSV(t){
+  var rows=[],row=[],f="",q=false,i,c;
+  for(i=0;i<t.length;i++){c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;
+    else if(c===","){row.push(f);f=""}
+    else if(c==="\n"){row.push(f);rows.push(row);row=[];f=""}
+    else if(c!=="\r")f+=c;}
+  if(f!==""||row.length){row.push(f);rows.push(row)}
+  return rows;
+}
+/* Datum: 11.11.2026 · 2026-11-11 · 11/11/2026 (mit oder ohne Uhrzeit) */
+function parseDate(s){
+  s=String(s||"").trim();if(!s)return null;var m,d;
+  if((m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?/)))d=new Date(+m[1],m[2]-1,+m[3],+(m[4]||0),+(m[5]||0));
+  else if((m=s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/)))d=new Date(m[3].length===2?2000+ +m[3]:+m[3],m[2]-1,+m[1],+(m[4]||0),+(m[5]||0));
+  else if((m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:\s+(\d{1,2}):(\d{2}))?/))){var a=+m[1],b=+m[2];
+    if(a>12)d=new Date(+m[3],b-1,a,+(m[4]||0),+(m[5]||0));else d=new Date(+m[3],a-1,b,+(m[4]||0),+(m[5]||0))}
+  return d&&!isNaN(d)?d:null;
+}
+function parseLektionen(s){
+  s=String(s||"");var set={},low=s.toLowerCase();
+  if(low.indexOf("ganzer tag")>=0)return [1,2,3,4,5,6,7,8,9];
+  if(low.indexOf("vormittag")>=0)[1,2,3,4,5].forEach(function(n){set[n]=1});
+  if(low.indexOf("nachmittag")>=0)[6,7,8,9].forEach(function(n){set[n]=1});
+  var re=/(\d)\.\s*Lektion/gi,m;while((m=re.exec(s)))set[+m[1]]=1;
+  if(!Object.keys(set).length)s.split(/[,;\s]+/).forEach(function(x){if(/^[1-9]\.?$/.test(x))set[parseInt(x,10)]=1});
+  return Object.keys(set).map(Number).filter(function(n){return n>=1&&n<=9}).sort(function(a,b){return a-b});
+}
+function parseKlassen(s){
+  var teile=String(s||"").split(",").map(function(x){return x.trim()});
+  if(teile.some(function(x){return /alle klassen/i.test(x)}))return KLASSEN.slice();
+  return KLASSEN.filter(function(k){return teile.indexOf(k)>=0});
+}
+function toData(text){
+  var rows=parseCSV(text).filter(function(r){return r.some(function(c){return c.trim()})});
+  var out={entries:[],notices:[],updated:null};if(!rows.length)return out;
+  var h=rows[0].map(function(x){return x.toLowerCase()});
+  function col(words,fb){for(var i=0;i<h.length;i++)for(var j=0;j<words.length;j++)if(h[i].indexOf(words[j])>=0)return i;return fb}
+  var cTs=col(["zeitstempel","timestamp"],0),cD=col(["datum","date"],1),cK=col(["klasse"],2),cL=col(["lektion"],3),cA=col(["art"],4),cH=col(["hinweis","text","mitteilung"],5);
+  rows.slice(1).forEach(function(r){
+    var ts=parseDate(r[cTs]);if(ts&&(!out.updated||ts>out.updated))out.updated=ts;
+    var d=parseDate(r[cD]);if(!d)return;var dIso=iso(d);
+    var art=String(r[cA]||"").toLowerCase(),note=String(r[cH]||"").trim().slice(0,140);
+    if(art.indexOf("mitteilung")>=0){if(note)out.notices.push({date:dIso,text:note});return}
+    var type=art.indexOf("spett")>=0?"spett":art.indexOf("vertret")>=0?"vertr":(art.indexOf("fällt")>=0||art.indexOf("faellt")>=0||/\baus\b/.test(art))?"aus":null;if(!type)return;
+    var ks=parseKlassen(r[cK]),ls=parseLektionen(r[cL]);if(!ks.length||!ls.length)return;
+    out.entries.push({date:dIso,classes:ks,lessons:ls,type:type,note:note.slice(0,100)});
+  });
+  return out;
+}
+function beispiel(){
+  var T=tage(),a=iso(T[0].d),b=iso(T[1].d);
+  return {demo:true,updated:new Date(),notices:[{date:a,text:"Beispiel: Der Sporttag wird auf Freitag verschoben."}],
+    entries:[{date:a,classes:["1. Sek A","1. Sek B"],lessons:[3,4],type:"spett",note:""},
+             {date:a,classes:["1. Sek C"],lessons:[5],type:"vertr",note:"Zimmer 12"},
+             {date:a,classes:["2. Sek Kof"],lessons:[8,9],type:"aus",note:""},
+             {date:b,classes:["3. Sek Ste"],lessons:[1],type:"aus",note:"Erst um 08:20 in der Schule"}]};
+}
+
+function laden(){
+  if(!CSV_URL){S.data=beispiel();S.loading=false;render();return}
+  S.loading=true;render();
+  fetch(CSV_URL+(CSV_URL.indexOf("?")>=0?"&":"?")+"t="+Date.now(),{cache:"no-store"})
+    .then(function(r){if(!r.ok)throw new Error(r.status);return r.text()})
+    .then(function(t){S.data=toData(t);S.offline=false;S.err=false;S.fetched=new Date();store("uh-csv",t);store("uh-csv-zeit",S.fetched.toISOString())})
+    .catch(function(){var t=store("uh-csv");if(t){S.data=toData(t);S.offline=true;var z=store("uh-csv-zeit");S.fetched=z?new Date(z):null}else S.err=true})
+    .then(function(){S.loading=false;render()});
+}
+
+function lessonMap(k,dIso){var m={};(S.data?S.data.entries:[]).forEach(function(e){
+  if(e.date===dIso&&e.classes.indexOf(k)>=0)e.lessons.forEach(function(n){m[n]=e})});return m}
+
+/* ---------- Anzeige ---------- */
+function kopf(){
+  return '<header class="top"><div class="brand">'+LOGO+'<div><h1>Unterricht heute</h1><p>'+SCHULE+'</p></div></div>'+
+    '<button type="button" class="reload'+(S.loading?' spin':'')+'" data-act="reload" aria-label="Aktualisieren"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></header>'+
+    (S.data&&S.data.demo?'<div class="banner">Beispieldaten: Der CSV-Link ist noch nicht eingetragen.</div>':'')+
+    (S.offline?'<div class="banner">Keine Verbindung. Du siehst den letzten geladenen Stand.</div>':'');
+}
+function picker(){
+  return '<section class="picker"><h2>Welche Klasse bist du?</h2><p class="muted">Du wählst nur einmal. Auf diesem Handy bleibt deine Klasse gespeichert.</p><div class="stufen">'+
+    stufen().map(function(r){return '<div class="grid-k">'+r.map(function(k){return '<button type="button" data-act="set-klasse" data-k="'+esc(k)+'">'+esc(k)+'</button>'}).join("")+'</div>'}).join("")+'</div></section>';
+}
+function aktualisiert(){
+  var u=S.data&&S.data.updated;
+  if(!u)return '<p class="muted">Zuletzt aktualisiert: noch keine Einträge</p>';
+  var t=heute(),g=new Date(t);g.setDate(t.getDate()-1);
+  var tt=iso(u)===iso(t)?"heute":iso(u)===iso(g)?"gestern":kurz(u);
+  return '<p class="muted num">Zuletzt aktualisiert: '+tt+', '+pad(u.getHours())+':'+pad(u.getMinutes())+' Uhr</p>';
+}
+function schueler(){
+  if(!S.klasse||S.pick)return picker();
+  var T=tage(),tag=T[S.tab],dIso=iso(tag.d),k=S.klasse,m=lessonMap(k,dIso);
+  var ns=Object.keys(m).map(Number),cnt=function(t){return ns.filter(function(n){return m[n].type===t}).length},nA=cnt("aus"),nS=cnt("spett"),nV=cnt("vertr");
+  var h='<div class="klasse"><span class="klasse-chip">'+esc(k)+'</span><button type="button" class="link" data-act="pick">Klasse ändern</button></div>';
+  h+='<div class="tabs" role="tablist">'+T.map(function(t,i){return '<button type="button" role="tab" aria-selected="'+(S.tab===i)+'" data-act="tab" data-i="'+i+'"><b>'+t.label+'</b><span>'+lang(t.d)+'</span></button>'}).join("")+'</div>';
+  var cls,sym,title,sub;
+  if(!S.data&&S.err){cls="wait";sym="?";title="Keine Verbindung";sub="Die Daten konnten nicht geladen werden. Prüfe dein Internet und tippe oben auf Aktualisieren."}
+  else if(!S.data){cls="wait";sym="…";title="Wird geladen";sub="Einen Moment."}
+  else if(isWE(tag.d)){cls="frei";sym="–";title="Wochenende";sub="Heute ist kein Unterricht. Schau beim Tab daneben, wie es am "+T[1].label+" aussieht."}
+  else if(!ns.length){cls="ok";sym="✓";title="Unterricht nach Plan";sub="Für "+esc(k)+" ist "+(S.tab===0?"heute":"am "+T[1].label)+" nichts geändert."}
+  else{cls=nA?"aus":nS?"spett":"vertr";sym="!";title=nA===9?"Kein Unterricht":"Es gibt Änderungen";
+    var p=[];if(nA)p.push(nA+(nA===1?" Lektion fällt aus":" Lektionen fallen aus"));if(nS)p.push(nS+(nS===1?" Lektion nach Spettplan":" Lektionen nach Spettplan"));if(nV)p.push(nV+(nV===1?" Lektion mit Vertretung":" Lektionen mit Vertretung"));sub=p.join(" · ")}
+  h+='<section class="status '+cls+'" aria-live="polite"><div class="dot" aria-hidden="true">'+sym+'</div><div><h2>'+title+'</h2><p>'+sub+'</p></div></section>';
+  if(S.data)S.data.notices.filter(function(n){return n.date===dIso}).forEach(function(n){h+='<div class="notice"><span>'+esc(n.text)+'</span></div>'});
+  if(!isWE(tag.d)){
+    var now=new Date(),nm=now.getHours()*60+now.getMinutes();
+    h+='<section class="plan" aria-label="Tagesablauf">'+PLAN.map(function(x){
+      var t='<span class="t">'+x.von+'–'+x.bis+'</span>';
+      if(x.p)return '<div class="row pause">'+t+'<span class="l">'+x.p+'</span></div>';
+      var e=m[x.n],jetzt=S.tab===0&&nm>=min(x.von)&&nm<min(x.bis);
+      return '<div class="row'+(e?" "+e.type:"")+(jetzt?" jetzt":"")+'">'+t+'<span class="l"><span>'+x.n+'. Lektion</span>'+(e&&(e.note||INFO[e.type])?'<span class="note">'+esc([INFO[e.type],e.note].filter(Boolean).join(" · "))+'</span>':'')+'</span>'+
+        (e?'<span class="tag '+e.type+'">'+ART[e.type]+'</span>':(jetzt?'<span class="tag now">jetzt</span>':''))+'</div>';
+    }).join("")+'</section>';
+  }
+  h+='<div class="foot">'+aktualisiert()+
+    '<details><summary>So kommt die App auf dein Handy</summary><h3>iPhone</h3><ol><li>Diese Seite in Safari öffnen</li><li>Teilen-Symbol antippen (Quadrat mit Pfeil)</li><li>«Zum Home-Bildschirm» wählen</li></ol><h3>Android</h3><ol><li>Diese Seite in Chrome öffnen</li><li>Menü oben rechts (drei Punkte) antippen</li><li>«Zum Startbildschirm hinzufügen» oder «App installieren» wählen</li></ol></details>'+
+    '<p class="muted">Hier stehen nur geänderte Lektionen. Alles andere läuft nach deinem normalen Stundenplan.</p>'+
+    '<p><a class="link" href="#schule">Übersicht ganze Schule</a></p></div>';
+  return h;
+}
+function schule(){
+  var T=tage(),st=T[S.schuleTab],sIso=iso(st.d);
+  return '<p><a class="link" href="#">← Zurück zur Klassenansicht</a></p><section class="card"><div class="top"><h2>Ganze Schule</h2><div class="seg">'+
+    T.map(function(t,i){return '<button type="button" aria-pressed="'+(S.schuleTab===i)+'" data-act="schule-tab" data-i="'+i+'">'+t.label+'</button>'}).join("")+'</div></div>'+
+    '<p class="muted" style="margin:0">'+lang(st.d)+'</p><div class="tablewrap"><table class="schule"><thead><tr><th></th>'+LEKT.map(function(x){return '<th scope="col">'+x.n+'</th>'}).join("")+'</tr></thead><tbody>'+
+    KLASSEN.map(function(k){var m=lessonMap(k,sIso);return '<tr><th scope="row" class="k">'+esc(k)+'</th>'+LEKT.map(function(x){var e=m[x.n];
+      return e?'<td class="'+e.type+'" title="'+ART[e.type]+'">'+KURZ[e.type]+'</td>':'<td></td>'}).join("")+'</tr>'}).join("")+
+    '</tbody></table></div><div class="legend"><span><i class="s"></i>S = Spettplan</span><span><i class="v"></i>V = Vertretung</span><span><i class="a"></i>A = Fällt aus</span></div></section>'+
+    '<div class="foot">'+aktualisiert()+'</div>';
+}
+function render(){
+  document.getElementById("app").innerHTML=kopf()+(location.hash==="#schule"?schule():schueler());
+}
+
+document.getElementById("app").addEventListener("click",function(ev){
+  var b=ev.target.closest("[data-act]");if(!b)return;
+  switch(b.dataset.act){
+    case "set-klasse":S.klasse=b.dataset.k;S.pick=false;store("uh-klasse",S.klasse);break;
+    case "pick":S.pick=true;break;
+    case "tab":S.tab=+b.dataset.i;break;
+    case "schule-tab":S.schuleTab=+b.dataset.i;break;
+    case "reload":laden();return;
+  }
+  render();
+});
+window.addEventListener("hashchange",function(){render();window.scrollTo(0,0)});
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")laden()});
+setInterval(laden,5*60*1000);
+setInterval(function(){if(!S.loading)render()},60*1000);
+render();laden();
+})();
+</script>
+</body>
+</html>
