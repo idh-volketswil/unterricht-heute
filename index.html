@@ -258,8 +258,11 @@ function kopf(){
     (S.offline?'<div class="banner">Keine Verbindung. Du siehst den letzten geladenen Stand.</div>':'');
 }
 function picker(){
-  return '<section class="picker"><h2>Welche Klasse bist du?</h2><p class="muted">Du wählst nur einmal. Auf diesem Handy bleibt deine Klasse gespeichert.</p><div class="stufen">'+
-    stufen().map(function(r){return '<div class="grid-k">'+r.map(function(k){return '<button type="button" data-act="set-klasse" data-k="'+esc(k)+'">'+esc(k)+'</button>'}).join("")+'</div>'}).join("")+'</div></section>';
+  var wechsel=!!S.klasse;
+  return '<section class="picker"><h2>'+(wechsel?'Klasse wechseln':'Welche Klasse bist du?')+'</h2><p class="muted">'+
+    (wechsel?'Tippe auf eine Klasse, um ihren Tagesplan zu sehen.':'Deine Wahl bleibt auf diesem Handy gespeichert. Über «Klasse ändern» kannst du jederzeit wechseln.')+'</p><div class="stufen">'+
+    stufen().map(function(r){return '<div class="grid-k">'+r.map(function(k){return '<button type="button" data-act="set-klasse" data-k="'+esc(k)+'">'+esc(k)+'</button>'}).join("")+'</div>'}).join("")+'</div>'+
+    (wechsel?'<p><button type="button" class="link" data-act="pick-back">← Zurück zu '+esc(S.klasse)+'</button></p>':'')+'</section>';
 }
 function aktualisiert(){
   var u=S.data&&S.data.updated;
@@ -318,6 +321,7 @@ document.getElementById("app").addEventListener("click",function(ev){
   switch(b.dataset.act){
     case "set-klasse":S.klasse=b.dataset.k;S.pick=false;store("uh-klasse",S.klasse);break;
     case "pick":S.pick=true;break;
+    case "pick-back":S.pick=false;break;
     case "tab":S.tab=+b.dataset.i;break;
     case "schule-tab":S.schuleTab=+b.dataset.i;break;
     case "reload":laden();return;
